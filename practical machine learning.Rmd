@@ -92,7 +92,7 @@ modFit
 ```
 
 ## Cross Validation and Accuracy
-Now that the model is built, we compare to the test set (the 40% of the data set aside for this purpose).
+Now that the model is built, we compare to the test set (the 40% of the data set aside for this purpose). Random Forest is an extremely accurate algorithm (if correctly calibrated), so I expect the out of error sample to be low. 
 ```{r}
 confusionMatrix(testing$classe, predict(modFit,testing))
 ```
@@ -100,7 +100,7 @@ confusionMatrix(testing$classe, predict(modFit,testing))
 The model appears to be highly accurate with only a few cases mispredicted. Specifically, there were 11 cases of A miscategorized as B, 16 cases of C to D, and 13 cases of D to C. However, these are only a few among over a thousand.
 The accuracy reported by the confusionMatrix function as performed on the testing data is 99.15%. This is a very high level of accuracy leaving only a 0.85% out of sample error. This level of accuracy is so high that it initially made me concerned about overfitting, but remember that this data set is outside the training set so it really demonstrates how well the prediction model worked. 
 
-### Results
+## Results
 Now, we use the model on the test data (not to be confused with the data set aside for cross validation)
 ```{r}
 final<-predict(modFit, pmlTest)

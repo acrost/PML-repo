@@ -171,7 +171,7 @@ modFit</code></pre></div>
 </div>
 <div id="cross-validation-and-accuracy" class="section level2">
 <h2>Cross Validation and Accuracy</h2>
-<p>Now that the model is built, we compare to the test set (the 40% of the data set aside for this purpose).</p>
+<p>Now that the model is built, we compare to the test set (the 40% of the data set aside for this purpose). Random Forest is an extremely accurate algorithm (if correctly calibrated), so I expect the out of error sample to be low.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">confusionMatrix</span>(testing$classe, <span class="kw">predict</span>(modFit,testing))</code></pre></div>
 <pre><code>## Confusion Matrix and Statistics
 ## 
@@ -205,15 +205,15 @@ modFit</code></pre></div>
 ## Detection Prevalence   0.2845   0.1935   0.1744   0.1639   0.1838
 ## Balanced Accuracy      0.9971   0.9952   0.9891   0.9917   0.9989</code></pre>
 <p>The model appears to be highly accurate with only a few cases mispredicted. Specifically, there were 11 cases of A miscategorized as B, 16 cases of C to D, and 13 cases of D to C. However, these are only a few among over a thousand. The accuracy reported by the confusionMatrix function as performed on the testing data is 99.15%. This is a very high level of accuracy leaving only a 0.85% out of sample error. This level of accuracy is so high that it initially made me concerned about overfitting, but remember that this data set is outside the training set so it really demonstrates how well the prediction model worked.</p>
-<div id="results" class="section level3">
-<h3>Results</h3>
+</div>
+<div id="results" class="section level2">
+<h2>Results</h2>
 <p>Now, we use the model on the test data (not to be confused with the data set aside for cross validation)</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">final&lt;-<span class="kw">predict</span>(modFit, pmlTest)
 final</code></pre></div>
 <pre><code>##  [1] B A B A A E D B A A B C B A E E A B B B
 ## Levels: A B C D E</code></pre>
 <p>These predictions were submitted and confirmed to be correct.</p>
-</div>
 </div>
 
 
