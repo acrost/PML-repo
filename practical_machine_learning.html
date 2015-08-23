@@ -74,7 +74,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 </div>
 
 
-<p>The purpose of this project is to build a machine learning model to make a prediction on data collected from accelerometers worn by participants performing various activities. The participants were asked to perform barbell lifts correctly and incorrectly in 5 different ways. These ways are classified as:A, B, C, D, and E. The acccelometer measured belt, forearm, arm, and dumbell motions.The dataset was obtained from this source: <a href="http://groupware.les.inf.puc-rio.br/har" class="uri">http://groupware.les.inf.puc-rio.br/har</a> . Further explanation of the experiment can be found in the section on the Weight Lifting Exercise Dataset.</p>
+<p>The purpose of this project is to build a machine learning model to make a prediction on data collected from accelerators worn by participants performing various activities. The participants were asked to perform barbell lifts correctly and incorrectly in 5 different ways. These ways are classified as:A, B, C, D, and E. The accelerate measured belt, forearm, arm, and dumbbell motions.The dataset was obtained from this source: <a href="http://groupware.les.inf.puc-rio.br/har" class="uri">http://groupware.les.inf.puc-rio.br/har</a> . Further explanation of the experiment can be found in the section on the Weight Lifting Exercise Dataset.</p>
 <div id="obtaining-the-data" class="section level2">
 <h2>Obtaining the Data</h2>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co">#load appropriate libraries</span>
@@ -112,8 +112,11 @@ pmlTest&lt;-<span class="kw">read.csv</span>(<span class="dt">file=</span> <span
 temp&lt;-pmlTrain[,-<span class="kw">which</span>(<span class="kw">apply</span>(<span class="kw">is.na</span>(pmlTrain), <span class="dv">2</span>, sum)&gt;(<span class="fl">0.5</span>*<span class="kw">nrow</span>(pmlTrain)))]
 <span class="kw">dim</span>(temp)</code></pre></div>
 <pre><code>## [1] 19622    93</code></pre>
-<p>The data set is down to 93 variables. The next step is to discard columns that won’t help prediction. The timestamp is unlikely to help, neither are the skewness, window or kurtosis variables.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># look for keywords using regular expressions and eliminate those columns</span>
+<p>The data set is down to 93 variables. We want the data that addresses dumbbell, arm, forearm, and belt readings, so grab those first. The timestamp is unlikely to help, neither are the skewness, window or kurtosis readings for the remaining variables. Lastly, retain only quantitative data, then reattach the “classe” variable (the variable the model is designed to predict).</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co">#grab dumbbell, arm, forearm, and belt data</span>
+temp &lt;-<span class="st"> </span>temp[, <span class="kw">grepl</span>(<span class="st">&quot;arm|forearm|belt|dumbbell&quot;</span>, <span class="kw">colnames</span>(temp))]
+
+<span class="co"># look for keywords using regular expressions and eliminate those columns</span>
 temp &lt;-<span class="st"> </span>temp[, !<span class="kw">grepl</span>(<span class="st">&quot;window|kurtosis|^X|skewness|timestamp&quot;</span>, <span class="kw">colnames</span>(temp))]
 
 <span class="co">#select only the remaining columns that are quantitative</span>
@@ -123,7 +126,7 @@ temp &lt;-<span class="st"> </span>temp[, <span class="kw">sapply</span>(temp, i
 temp$classe&lt;-pmlTrain$classe
 <span class="kw">dim</span>(temp)</code></pre></div>
 <pre><code>## [1] 19622    53</code></pre>
-<p>Now there are 53 variables to feed into the machine learning algorithm, or 52 when “classe” is excluded. This should improve the speed in which the model is built.</p>
+<p>Now there are 53 variables to feed into the machine learning algorithm, or 52 not including “classe”. This should improve the speed in which the model is built.</p>
 </div>
 <div id="building-a-model" class="section level2">
 <h2>Building a model</h2>
@@ -136,8 +139,8 @@ training&lt;-<span class="st"> </span>temp[inTrain, ]
 <span class="co">#create this testing set for cross validation later</span>
 testing &lt;-<span class="st"> </span>temp[-inTrain, ]</code></pre></div>
 <p>Building the model takes a long time, and without proper setting calibration, it can take hours. To avoid unnecessary wasted time while “knitting” this report, use a saved version of the model if it already exists from a previous run.</p>
-<p>We’ll use the Random Forest method with 10-fold cross validation and 151 trees. I would prefer to use a higher number of trees but building a random forest from a data set this large will have a huge runtime. The first time I “trained” a random forest model on the cleaned training set, the model was still being calculated over an hour later. I believe this compromise is reasonable, which the results confirmed.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Building the model takes a long time</span>
+<p>We’ll use the Random Forest method with 10-fold cross validation and 151 trees. I would prefer to use a higher number of trees but building a random forest from a data set this large will have a huge runtime. The first time I “trained” a random forest model on the cleaned training set using default parameters, the model was still being calculated over an hour later. I believe this compromise is reasonable, which the results confirmed.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># Building the model takes a long time. If a saved model was created earlier, us it</span>
 if (<span class="kw">file.exists</span>(<span class="st">&quot;modFit1.Rds&quot;</span>))
     {
       modFit&lt;-<span class="st"> </span><span class="kw">readRDS</span>(<span class="st">&quot;modFit1.Rds&quot;</span>)
@@ -168,6 +171,7 @@ modFit</code></pre></div>
 </div>
 <div id="cross-validation-and-accuracy" class="section level2">
 <h2>Cross Validation and Accuracy</h2>
+<p>Now that the model is built, we compare to the test set (the 40% of the data set aside for this purpose).</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw">confusionMatrix</span>(testing$classe, <span class="kw">predict</span>(modFit,testing))</code></pre></div>
 <pre><code>## Confusion Matrix and Statistics
 ## 
@@ -200,7 +204,7 @@ modFit</code></pre></div>
 ## Detection Rate         0.2842   0.1916   0.1714   0.1617   0.1825
 ## Detection Prevalence   0.2845   0.1935   0.1744   0.1639   0.1838
 ## Balanced Accuracy      0.9971   0.9952   0.9891   0.9917   0.9989</code></pre>
-<p>The model appears to be highly accurate with only a few cases mispredicted. Specifically, there were 11 cases of A miscategorized as B, 16 cases of C to D, and 13 cases of D to C. However, this only a few among over a thousand. The accuracy reported by the confusionMatrix function as performed on the testing data is 99.15%. This is a very high level of accuracy leaving only a 0.85% out of sample error. This level of accuracy is so high that it makes me concerned about overfitting, however that is beyond the scope of this project.</p>
+<p>The model appears to be highly accurate with only a few cases mispredicted. Specifically, there were 11 cases of A miscategorized as B, 16 cases of C to D, and 13 cases of D to C. However, these are only a few among over a thousand. The accuracy reported by the confusionMatrix function as performed on the testing data is 99.15%. This is a very high level of accuracy leaving only a 0.85% out of sample error. This level of accuracy is so high that it initially made me concerned about overfitting, but remember that this data set is outside the training set so it really demonstrates how well the prediction model worked.</p>
 <div id="results" class="section level3">
 <h3>Results</h3>
 <p>Now, we use the model on the test data (not to be confused with the data set aside for cross validation)</p>

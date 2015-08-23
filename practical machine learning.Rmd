@@ -4,15 +4,18 @@ title: "Practical Machine Learning"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 ---
-The purpose of this project is to build a machine learning model to make a prediction on data collected from accelerometers worn by participants performing various activities. The participants were asked to perform barbell lifts correctly and incorrectly in 5 different ways. These ways are classified as:A, B, C, D, and E. The acccelometer measured belt, forearm, arm, and dumbell motions.The dataset was obtained from this source: http://groupware.les.inf.puc-rio.br/har . Further explanation of the experiment can be found in the section on the Weight Lifting Exercise Dataset. 
+The purpose of this project is to build a machine learning model to make a prediction on data collected from accelerators worn by participants performing various activities. The participants were asked to perform barbell lifts correctly and incorrectly in 5 different ways. These ways are classified as:A, B, C, D, and E. The accelerate measured belt, forearm, arm, and dumbbell motions.The dataset was obtained from this source: http://groupware.les.inf.puc-rio.br/har . Further explanation of the experiment can be found in the section on the Weight Lifting Exercise Dataset. 
 
 ## Obtaining the Data
+
 ```{r}
 #load appropriate libraries
 library(RCurl)
 library(caret)
 library(randomForest)
+```
 
+```{r}
 # download data if it hasn't been downloaded already
 if(!file.exists("pml-training.csv")){
    download.file(url="https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv",
@@ -42,8 +45,11 @@ temp<-pmlTrain[,-which(apply(is.na(pmlTrain), 2, sum)>(0.5*nrow(pmlTrain)))]
 dim(temp)
 ```
 
-The data set is down to 93 variables. The next step is to discard columns that won't help prediction. The timestamp is unlikely to help, neither are the skewness, window or kurtosis variables. 
+The data set is down to 93 variables. We want the data that addresses dumbbell, arm, forearm, and belt readings, so grab those first. The timestamp is unlikely to help, neither are the skewness, window or kurtosis readings for the remaining variables. Lastly, retain only quantitative data, then reattach the "classe" variable (the variable the model is designed to predict). 
 ```{r}
+#grab dumbbell, arm, forearm, and belt data
+temp <- temp[, grepl("arm|forearm|belt|dumbbell", colnames(temp))]
+
 # look for keywords using regular expressions and eliminate those columns
 temp <- temp[, !grepl("window|kurtosis|^X|skewness|timestamp", colnames(temp))]
 
@@ -54,7 +60,7 @@ temp <- temp[, sapply(temp, is.numeric)]
 temp$classe<-pmlTrain$classe
 dim(temp)
 ```
-Now there are 53 variables to feed into the machine learning algorithm, or 52 when "classe" is excluded. This should improve the speed in which the model is built. 
+Now there are 53 variables to feed into the machine learning algorithm, or 52 not including "classe". This should improve the speed in which the model is built. 
 
 ## Building a model
 Most training sets use 60% of the available data to build a model, so we'll use that same proportion.
@@ -70,10 +76,10 @@ testing <- temp[-inTrain, ]
 
 Building the model takes a long time, and without proper setting calibration, it can take hours. To avoid unnecessary wasted time while "knitting" this report, use a saved version of the model if it already exists from a previous run. 
 
-We'll use the Random Forest method with 10-fold cross validation and 151 trees. I would prefer to use a higher number of trees but building a random forest from a data set this large will have a huge runtime. The first time I "trained" a random forest model on the cleaned training set, the model was still being calculated over an hour later. I believe this compromise is reasonable, which the results confirmed. 
+We'll use the Random Forest method with 10-fold cross validation and 151 trees. I would prefer to use a higher number of trees but building a random forest from a data set this large will have a huge runtime. The first time I "trained" a random forest model on the cleaned training set using default parameters, the model was still being calculated over an hour later. I believe this compromise is reasonable, which the results confirmed. 
 
 ```{r}
-# Building the model takes a long time
+# Building the model takes a long time. If a saved model was created earlier, us it
 if (file.exists("modFit1.Rds"))
     {
       modFit<- readRDS("modFit1.Rds")
@@ -86,12 +92,13 @@ modFit
 ```
 
 ## Cross Validation and Accuracy
+Now that the model is built, we compare to the test set (the 40% of the data set aside for this purpose).
 ```{r}
 confusionMatrix(testing$classe, predict(modFit,testing))
 ```
 
-The model appears to be highly accurate with only a few cases mispredicted. Specifically, there were 11 cases of A miscategorized as B, 16 cases of C to D, and 13 cases of D to C. However, this only a few among over a thousand.
-The accuracy reported by the confusionMatrix function as performed on the testing data is 99.15%. This is a very high level of accuracy leaving only a 0.85% out of sample error. This level of accuracy is so high that it makes me concerned about overfitting, however that is beyond the scope of this project. 
+The model appears to be highly accurate with only a few cases mispredicted. Specifically, there were 11 cases of A miscategorized as B, 16 cases of C to D, and 13 cases of D to C. However, these are only a few among over a thousand.
+The accuracy reported by the confusionMatrix function as performed on the testing data is 99.15%. This is a very high level of accuracy leaving only a 0.85% out of sample error. This level of accuracy is so high that it initially made me concerned about overfitting, but remember that this data set is outside the training set so it really demonstrates how well the prediction model worked. 
 
 ### Results
 Now, we use the model on the test data (not to be confused with the data set aside for cross validation)
